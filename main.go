@@ -7,7 +7,7 @@ import (
   "net/http"
   "os"
   "time"
-  "io"
+  "context"
   "github.com/gomodule/redigo/redis"
 )
 
@@ -21,16 +21,18 @@ func incrementHandler(w http.ResponseWriter, r *http.Request) {
   counter, err := redis.Int(conn.Do("INCR", "visits"))
   if err != nil {
     http.Error(w, "Error incrementing visitor counter", http.StatusInternalServerError)
-    return
+    // return
   }
   fmt.Fprintf(w, "Visitor number: %d", counter)
   log.Printf("Visitor number: %d", counter)
 
+  ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+  defer cancel()
   time.Sleep(time.Second)
-  resp, err := http.Get("http://visit-counter:8080")
-  defer resp.Body.Close()
-  body, err := io.ReadAll(resp.Body)
-  log.Printf(string(body))
+  req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://visit-counter:8080", nil)
+  if err != nil { log.Printf("%s", err) }
+  _, err = http.DefaultClient.Do(req)
+  if err != nil { log.Printf("%s", err) }
 
 }
 
