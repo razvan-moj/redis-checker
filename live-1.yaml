@@ -3,10 +3,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: visit-counter
+  namespace: raz-test-one
   labels:
     app: visit-counter
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: visit-counter
@@ -17,7 +18,7 @@ spec:
     spec:
       containers:
       - name: visit-counter
-        image: "razvanmoj/redis-checker:t1"
+        image: "razvanmoj/redis-checker:t11"
         ports:
         - name: http
           containerPort: 8080
@@ -29,6 +30,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: visit-counter
+  namespace: raz-test-one
 spec:
   type: ClusterIP
   selector:
