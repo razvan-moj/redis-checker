@@ -9,6 +9,7 @@ import (
   "time"
   "context"
   "github.com/gomodule/redigo/redis"
+  "github.com/getsentry/sentry-go"
 )
 
 var redisPool *redis.Pool
@@ -21,7 +22,8 @@ func incrementHandler(w http.ResponseWriter, r *http.Request) {
   counter, err := redis.Int(conn.Do("INCR", "visits"))
   if err != nil {
     http.Error(w, "Error incrementing visitor counter", http.StatusInternalServerError)
-    // return
+    sentry.CaptureException(err)
+    return
   }
   fmt.Fprintf(w, "Visitor number: %d", counter)
   log.Printf("Visitor number: %d", counter)
@@ -33,22 +35,22 @@ func incrementHandler(w http.ResponseWriter, r *http.Request) {
   if err != nil { log.Printf("%s", err) }
   _, err = http.DefaultClient.Do(req)
   if err != nil { log.Printf("%s", err) }
-
 }
 
 func main() {
 
   log.SetOutput(os.Stderr)
 
+  err := sentry.Init(sentry.ClientOptions { Dsn: os.Getenv("sentry_dsn"), TracesSampleRate: 1.0, Debug: true, })
+  if err != nil { log.Fatalf("sentry.Init: %s", err) }
+
   redisAddr := os.Getenv("primary_endpoint_address")
   redisToken := os.Getenv("auth_token")
   redisPort := os.Getenv("redis_port")
-  if redisPort == "" {
-    redisPort = "6379"
-  }
+  if redisPort == "" { redisPort = "6379" }
   redisConn := fmt.Sprintf("%s:%s", redisAddr, redisPort)
 
-  const maxConnections = 10
+  const maxConnections = 5
   redisPool = &redis.Pool{
     MaxIdle: maxConnections,
     Dial: func() (redis.Conn, error) {
@@ -59,12 +61,8 @@ func main() {
   http.HandleFunc("/", incrementHandler)
 
   port := os.Getenv("PORT")
-  if port == "" {
-    port = "8080"
-  }
+  if port == "" { port = "8080" }
   log.Printf("Listening on port %s", port)
-  if err := http.ListenAndServe(":"+port, nil); err != nil {
-    log.Fatal(err)
-  }
+  if err := http.ListenAndServe(":"+port, nil); err != nil { log.Fatal(err) }
 
 }

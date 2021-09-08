@@ -25,6 +25,8 @@ spec:
         envFrom:
         - secretRef:
             name: raz-test-not-one-ec-cluster
+        - secretRef:
+            name: raz-test-sentry
 ---
 apiVersion: v1
 kind: Service
