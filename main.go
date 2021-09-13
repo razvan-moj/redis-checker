@@ -50,7 +50,7 @@ func main() {
   if redisPort == "" { redisPort = "6379" }
   redisConn := fmt.Sprintf("%s:%s", redisAddr, redisPort)
 
-  const maxConnections = 5
+  const maxConnections = 1
   redisPool = &redis.Pool{
     MaxIdle: maxConnections,
     Dial: func() (redis.Conn, error) {

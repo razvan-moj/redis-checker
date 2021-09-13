@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: visit-counter
-        image: "razvanmoj/redis-checker:t12"
+        image: "razvanmoj/redis-checker:t14"
         ports:
         - name: http
           containerPort: 8080
